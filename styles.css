@@ -1,0 +1,89 @@
+:root { --bg: #051429; --accent: #4CAF50; }
+html,body { height:100%; margin:0; }
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background: var(--bg);
+  transition: background .5s;
+}
+
+.container {
+  background: var(--bg);
+  padding: 24px;
+  border-radius: 16px;
+  border: 10px solid white;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+  text-align:center;
+  color: white;
+}
+
+.circle-container {
+  position: relative;
+  width: 700px;   /* change size here */
+  height: 700px;
+  margin: 0 auto 18px;
+}
+
+svg { width:100%; height:100%; transform: rotate(-90deg); display:block; }
+circle { fill:none; stroke-width:20; stroke-linecap:round; }
+.bg { stroke:#ddd; opacity:.28; }
+.progress { stroke: var(--accent); transition: stroke-dashoffset 1s linear; }
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 20px;
+  pointer-events: none;
+}
+
+#timeText {
+  pointer-events: none;
+  font-weight:700;
+  color: white;
+}
+
+#startBtn {
+  pointer-events: auto;
+  display: block;
+  padding: 18px 36px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  font-weight:700;
+  transition: transform .12s ease, opacity .12s ease;
+}
+#startBtn:active { transform: scale(.98); }
+
+#clicks {
+  font-size: 48px;
+  font-weight: 700;
+  color: white;
+  margin-top: 4px;
+}
+
+.flash {
+  animation: flashRed .6s infinite alternate;
+}
+@keyframes flashRed {
+  from { background-color: var(--bg); }
+  to   { background-color: red; }
+}
+
+.fade-in { animation: fadeIn .25s ease; }
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(6px) scale(.98);}
+  to { opacity:1; transform: translateY(0) scale(1);}
+}
+
+@media (max-width:760px) {
+  .circle-container { width: 320px; height: 320px; }
+  #clicks { font-size:28px; }
+}
