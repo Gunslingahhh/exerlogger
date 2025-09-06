@@ -57,12 +57,12 @@ function startTimer(durationSeconds) {
   timeText.style.display = 'block';
   startBtn.style.display = 'none';
 
-  timeText.textContent = `${time}s`;
+  timeText.textContent = `${time}`;
   progressCircle.style.strokeDashoffset = 0;
 
   timer = setInterval(() => {
     time--;
-    const display = time >= 0 ? `${time}s` : '0s';
+    const display = time >= 0 ? `${time}` : '0';
     timeText.textContent = display;
 
     const offset = circumference - Math.max(0, (time / durationSeconds)) * circumference;
@@ -77,13 +77,22 @@ function startTimer(durationSeconds) {
       startBtn.classList.add('fade-in');
       setTimeout(() => startBtn.classList.remove('fade-in'), 300);
       document.body.classList.add('flash');
+      document.querySelector('.container').classList.add('flash-border');
     }
   }, 1000);
 }
 
 startBtn.addEventListener('click', () => {
-  clickCount++;
-  clicksElement.textContent = `Clicks: ${clickCount}`;
+  document.querySelector('.container').classList.remove('flash-border');
+
+  // Limit the count of set to 20
+  if (clickCount < 20){
+    clickCount++;
+  }
+  else{
+    //Do nothing
+  }
+  clicksElement.textContent = `Sets: [ ${clickCount}  / 10 ]`;
   startBtn.style.display = 'none';
-  startTimer(2); // change to e.g. 5 for testing
+  startTimer(1); // change to e.g. 5 for testing
 });
