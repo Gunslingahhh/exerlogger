@@ -1,7 +1,7 @@
 const totalSegments = 24; // number of dashes/dots
-const segThickness = 25; // width of each segment
-const segLength = 60; // length of each segment
-const radius = 230; // distance from the center of the circle
+const segThickness = 20; // width of each segment
+const segLength = 50; // length of each segment
+const radius = 180; // distance from the center of the circle
 const container = document.getElementById("container");
 
 for (let i = 0; i < totalSegments; i++) {
