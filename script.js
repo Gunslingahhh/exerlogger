@@ -1,98 +1,31 @@
-// Elements
-const container = document.getElementById('circleContainer');
-const bgCircle = document.querySelector('.bg');
-const progressCircle = document.querySelector('.progress');
-const timeText = document.getElementById('timeText');
-const startBtn = document.getElementById('startBtn');
-const clicksElement = document.getElementById('clicks');
+const totalSegments = 24; // number of dashes/dots
+const segThickness = 25; // width of each segment
+const segLength = 60; // length of each segment
+const radius = 230; // distance from the center of the circle
+const container = document.getElementById("container");
 
-// State
-let timer = null;
-let clickCount = 0;
-let circleData = { radius:0, circumference:0 };
+for (let i = 0; i < totalSegments; i++) {
+    // Create a wrapper for each segment. This wrapper will handle the rotation.
+    const segWrapper = document.createElement("div");
+    segWrapper.className = "segment-wrapper";
 
-// Calculate sizes
-function resizeCircle() {
-  const size = container.offsetWidth;
-  const stroke = 20;
-  const radius = (size / 2) - (stroke / 2) - 4;
-  const cx = size / 2;
-  const cy = size / 2;
+    // Create the segment itself.
+    const seg = document.createElement("div");
+    seg.className = "segment";
 
-  bgCircle.setAttribute('cx', cx);
-  bgCircle.setAttribute('cy', cy);
-  bgCircle.setAttribute('r', radius);
+    // Size of segment
+    seg.style.width = segThickness + "px";
+    seg.style.height = segLength + "px";
+    
+    // Position the segment inside the wrapper based on the radius.
+    // The negative value moves it "up" from the center of the container.
+    seg.style.transform = `translateY(-${radius}px)`;
 
-  progressCircle.setAttribute('cx', cx);
-  progressCircle.setAttribute('cy', cy);
-  progressCircle.setAttribute('r', radius);
+    // Rotate the wrapper around the center.
+    const angle = (360 / totalSegments) * i;
+    segWrapper.style.transform = `rotate(${angle}deg) translateX(-${segThickness / 2}px)`;
 
-  const circumference = 2 * Math.PI * radius;
-  progressCircle.style.strokeDasharray = circumference;
-  progressCircle.style.strokeDashoffset = 0;
-
-  timeText.style.fontSize = Math.max(Math.round(size / 6), 20) + 'px';
-  startBtn.style.fontSize = Math.max(Math.round(size / 18), 14) + 'px';
-  startBtn.style.padding =
-    Math.max(Math.round(size / 36), 12) + 'px ' +
-    Math.max(Math.round(size / 24), 20) + 'px';
-
-  circleData = { radius, circumference };
-  return circleData;
+    // Append the segment to the wrapper, and the wrapper to the container.
+    segWrapper.appendChild(seg);
+    container.appendChild(segWrapper);
 }
-
-resizeCircle();
-window.addEventListener('resize', resizeCircle);
-
-function startTimer(durationSeconds) {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
-
-  document.body.classList.remove('flash');
-  const { circumference } = resizeCircle();
-  let time = durationSeconds;
-
-  timeText.style.display = 'block';
-  startBtn.style.display = 'none';
-
-  timeText.textContent = `${time}`;
-  progressCircle.style.strokeDashoffset = 0;
-
-  timer = setInterval(() => {
-    time--;
-    const display = time >= 0 ? `${time}` : '0';
-    timeText.textContent = display;
-
-    const offset = circumference - Math.max(0, (time / durationSeconds)) * circumference;
-    progressCircle.style.strokeDashoffset = isFinite(offset) ? offset : circumference;
-
-    if (time <= 0) {
-      clearInterval(timer);
-      timer = null;
-      timeText.textContent = '';
-      progressCircle.style.strokeDashoffset = circumference;
-      startBtn.style.display = 'block';
-      startBtn.classList.add('fade-in');
-      setTimeout(() => startBtn.classList.remove('fade-in'), 300);
-      document.body.classList.add('flash');
-      document.querySelector('.container').classList.add('flash-border');
-    }
-  }, 1000);
-}
-
-startBtn.addEventListener('click', () => {
-  document.querySelector('.container').classList.remove('flash-border');
-
-  // Limit the count of set to 20
-  if (clickCount < 20){
-    clickCount++;
-  }
-  else{
-    //Do nothing
-  }
-  clicksElement.textContent = `Sets: [ ${clickCount}  / 10 ]`;
-  startBtn.style.display = 'none';
-  startTimer(1); // change to e.g. 5 for testing
-});

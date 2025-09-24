@@ -4,28 +4,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Timer Click App</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <title>Exerlogger</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="container">
-    <div class="circle-container" id="circleContainer">
-      <svg id="svg">
-        <circle class="bg" cx="150" cy="150" r="130"></circle>
-        <circle class="progress" cx="150" cy="150" r="130"></circle>
-      </svg>
-
-      <div id="overlay">
-        <div id="timeText"></div>
-        <button id="startBtn">Start</button>
-      </div>
+    <div id="container">
     </div>
-
-    <div id="clicks">Clicks: 0</div>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
