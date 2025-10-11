@@ -42,7 +42,7 @@ const segments = Array.from(document.querySelectorAll(".segment"));
 
 const state=["active", "inactive"];
 
-function countdown(time){
+function countdown(time) {
     // Allow countdowns within 1 second to 7200 seconds (2 hours)
     if (time > 0 && time <= 7200) {
         for (let i = time; i >= 0; i--) {
@@ -51,11 +51,20 @@ function countdown(time){
                 const minutes = Math.floor((i % 3600) / 60);
                 const seconds = i % 60;
 
-                // Always show HH:MM:SS format
-                const formattedTime = 
-                    String(hours).padStart(2, "0") + ":" + 
-                    String(minutes).padStart(2, "0") + ":" + 
-                    String(seconds).padStart(2, "0");
+                // Build format dynamically
+                let formattedTime;
+                if (hours > 0) {
+                    // Show HH:MM:SS if there are hours
+                    formattedTime =
+                        String(hours).padStart(2, "0") + ":" +
+                        String(minutes).padStart(2, "0") + ":" +
+                        String(seconds).padStart(2, "0");
+                } else {
+                    // Show MM:SS if there are no hours
+                    formattedTime =
+                        String(minutes).padStart(2, "0") + ":" +
+                        String(seconds).padStart(2, "0");
+                }
 
                 timer.innerHTML = formattedTime;
             }, (time - i) * 1000);
@@ -64,6 +73,7 @@ function countdown(time){
         timer.innerHTML = "Over limit";
     }
 }
+
 
 function stopwatch(){
     let second=0;
@@ -138,8 +148,6 @@ function rotationSegment(className, direction, time){
                         }
                     }
                 });
-
-                
             }, j * duration);        }
     }
     else if(direction=="anticlockwise"){
