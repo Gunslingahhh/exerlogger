@@ -17,7 +17,8 @@
         <div id="container">
             <p id="exerciseName">Exercise</p>
             <br>
-            <p id="startButton" onclick="startRepsBased(10, 120)">Start</p>
+            <p id="startButton" onclick="startRepsBased(10, 2, 'inactive', 'clockwise')">Start?</p>
+            <p id="restText">Rest</p>
             <br>
             <p id="timer"></p>
             <br>
