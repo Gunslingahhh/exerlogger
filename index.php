@@ -15,10 +15,10 @@
         </div>
 
         <div id="container">
-            <p id="exerciseName">Exercise</p>
+            <p id="exerciseName">[Exercise Name] x [Reps]</p>
             <br>
-            <p id="startButton" onclick="startRepsBased(10, 120, 'inactive', 'clockwise')">Start?</p>
-            <p id="restText">Rest</p>
+            <p id="startButton" onclick="startRepsBased(10, 10, 'inactive', 'clockwise')">Start?</p>
+            <p id="restText">Rest!</p>
             <br>
             <p id="timer"></p>
             <br>
