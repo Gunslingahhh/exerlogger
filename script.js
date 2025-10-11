@@ -7,8 +7,8 @@ const center = document.getElementById("center-point");
 const exerciseName = document.getElementById("exerciseName");
 const timer = document.getElementById("timer");
 const startButton = document.getElementById("startButton");
+const restText = document.getElementById("restText");
 const setsCount = document.getElementById("setsCount");
-
 
 // CREATE SEGMENT
 for (let i = 0; i < totalSegments; i++) {
@@ -27,7 +27,7 @@ for (let i = 0; i < totalSegments; i++) {
     // Position the segment inside the wrapper based on the radius.
     // The negative value moves it "up" from the center of the container.
     seg.style.transform = `translateY(-${radius}px)`;
-
+    
     // Rotate the wrapper around the center.
     const angle = (360 / totalSegments) * i;
     segWrapper.style.transform = `rotate(${angle}deg) translateX(-${segThickness / 2}px)`;
@@ -42,54 +42,41 @@ const segments = Array.from(document.querySelectorAll(".segment"));
 
 const state=["active", "inactive"];
 
-function rotationSegment(className, direction, time) {
-    const seconds = time * 1000; 
-    const duration = seconds / segments.length;
-    const startIndex=0;
-
-    startButton.style.display = "none";
-    timer.style.display = "block";
-
-    if (direction=="clockwise"){
-        //Clockwise
-        for (let j=0; j < segments.length; j++){
-            const index = (startIndex + j) % segments.length; 
+function countdown(time){
+    // Allow countdowns within 1 second to 7200 seconds (2 hours)
+    if (time > 0 && time <= 7200) {
+        for (let i = time; i >= 0; i--) {
             setTimeout(() => {
-                segments[index].classList.add(className);
-                
-                // remove all other classes in "state" that are not the desired class
-                state.forEach(c => {
-                    if (c !== className) {
-                    segments[index].classList.remove(c);
-                    }
-                });
+                const hours = Math.floor(i / 3600);
+                const minutes = Math.floor((i % 3600) / 60);
+                const seconds = i % 60;
 
-                if (j == segments.length-1){
-                    startButton.style.display = "block";
-                    timer.style.display = "none";
-                }
-            }, j * duration);        }
-    }
-    else if(direction=="anticlockwise"){
-        // Anticlockwise
-        for (let k=0; k < segments.length; k++){
-            const index = (startIndex - k + segments.length) % segments.length;
-            setTimeout(() => {
-                segments[index].classList.add(className);
+                // Always show HH:MM:SS format
+                const formattedTime = 
+                    String(hours).padStart(2, "0") + ":" + 
+                    String(minutes).padStart(2, "0") + ":" + 
+                    String(seconds).padStart(2, "0");
 
-                // remove all other classes in "state" that are not the desired class
-                state.forEach(c => {
-                    if (c !== className) {
-                    segments[index].classList.remove(c);
-                    }
-                });
-
-                if (k == segments.length-1){
-                    startButton.style.display = "block";
-                    timer.style.display = "none";
-                }
-            }, k * duration);
+                timer.innerHTML = formattedTime;
+            }, (time - i) * 1000);
         }
+    } else {
+        timer.innerHTML = "Over limit";
+    }
+}
+
+function stopwatch(){
+    let second=0;
+    const interval = setInterval(() =>{
+        second++;
+        console.log(`${second}`);
+    }, 1000);
+}
+
+function allSegment(className){
+    resetSegment();
+    for (let l=0; l < segments.length; l++){
+        segments[l].classList.add(className);
     }
 }
 
@@ -100,51 +87,83 @@ function resetSegment(){
 }
 
 var setCount=0;
-function startRepsBased(numberOfSet, restTime){
-    setCount++;
-
-    resetSegment();
-    rotationSegment("active", "anticlockwise", restTime);
-    countdown(restTime);
-
-
-    if (setCount <= numberOfSet*2){ // Overlimit just like in Solo Leveling
-        setsCount.innerHTML = `Sets: [ ${setCount} / ${numberOfSet} ]`;
+function startRepsBased(numberOfSet, restTime, className, direction){
+    if (setCount == 0){
+        allSegment("active");
+        startButton.innerHTML = "Start!";
     }
+    else{
+        resetSegment();
+        rotationSegment(className, direction, restTime);
+        countdown(restTime);
+        
+        if (setCount <= numberOfSet*2){ // Overlimit just like in Solo Leveling
+            setsCount.innerHTML = `Sets: [ ${setCount} / ${numberOfSet} ]`;
+        }
+    }
+    setCount++;
 }
 
 /* function startTimerBased(){
 
+
 } */
 
-function countdown(time){
-    // Only allow countdowns within a reasonable range (1 second to 1 day)
-    if (time > 0 && time <= 86400) {
-        for (let i = time; i >= 0; i--) {
+function rotationSegment(className, direction, time){
+    const seconds = time * 1000; 
+    const duration = seconds / (segments.length-1);
+
+    startButton.style.display = "none";
+    restText.style.display = "block";
+    timer.style.display = "block";
+
+    if (direction=="clockwise"){
+        const startIndex=1;
+        //Clockwise
+        for (let j=0; j < segments.length; j++){
+            const index = (startIndex + j) % segments.length; 
             setTimeout(() => {
-                const days = Math.floor(i / 86400);
-                const hours = Math.floor((i % 86400) / 3600);
-                const minutes = Math.floor((i % 3600) / 60);
-                const seconds = i % 60;
+                segments[index].classList.add(className);
+                
+                // remove all other classes in "state" that are not the desired class
+                state.forEach(c => {
+                    if (c !== className) {
+                        segments[index].classList.remove(c);
+                        if (j == segments.length-1){
+                            startButton.innerHTML = "Resume!";
+                            startButton.style.display = "block";
+                            restText.style.display = "none";
+                            timer.style.display = "none";
+                            setTimeout(()=>{allSegment(c);},80);               
+                        }
+                    }
+                });
 
-                // Build the display format dynamically
-                let parts = [];
-                if (days > 0) parts.push(String(days).padStart(2, "0"));
-                if (hours > 0 || days > 0) parts.push(String(hours).padStart(2, "0"));
-                parts.push(String(minutes).padStart(2, "0"));
-                parts.push(String(seconds).padStart(2, "0"));
+                
+            }, j * duration);        }
+    }
+    else if(direction=="anticlockwise"){
+        const startIndex=23;
+        // Anticlockwise
+        for (let k=0; k < segments.length; k++){
+            const index = (startIndex - k + segments.length) % segments.length;
+            setTimeout(() => {
+                segments[index].classList.add(className);
 
-                const formattedTime = parts.join(":");
-                timer.innerHTML = formattedTime;
-            }, (time - i) * 1000);
+                // remove all other classes in "state" that are not the desired class
+                state.forEach(c => {
+                    if (c !== className) {
+                        segments[index].classList.remove(c);
+                        if (k == segments.length-1){
+                            startButton.innerHTML = "Resume";
+                            startButton.style.display = "block";
+                            restText.style.display = "none";
+                            timer.style.display = "none";
+                            setTimeout(()=>{allSegment(c);},80);               
+                        }
+                    }
+                });
+            }, k * duration);
         }
-    } else {
-        console.log("Over limit");
     }
 }
-
-
-
-/* function stopwatch(){
-
-} */
