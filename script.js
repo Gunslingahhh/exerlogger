@@ -140,7 +140,6 @@ function rotationSegment(className, direction, time){
                     if (c !== className) {
                         segments[index].classList.remove(c);
                         if (j == segments.length-1){
-                            startButton.innerHTML = "Resume!";
                             startButton.style.display = "block";
                             restText.style.display = "none";
                             timer.style.display = "none";
@@ -163,7 +162,6 @@ function rotationSegment(className, direction, time){
                     if (c !== className) {
                         segments[index].classList.remove(c);
                         if (k == segments.length-1){
-                            startButton.innerHTML = "Resume";
                             startButton.style.display = "block";
                             restText.style.display = "none";
                             timer.style.display = "none";
