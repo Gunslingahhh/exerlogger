@@ -16,6 +16,12 @@ p{
         0 0 1px #00e6ff,
         0 0 2px #00e6ff,
         0 0 4px #00e6ff;
+    -webkit-tap-highlight-color: transparent; /* Removes gray/blue tap effect */
+    -webkit-user-select: none; /* Prevents text selection on iOS Safari */
+    -moz-user-select: none;    /* Prevents text selection on Firefox */
+    -ms-user-select: none;     /* Prevents text selection on old IE */
+    user-select: none;         /* Prevents text selection on all browsers */
+    outline: none;             /* Removes focus border */
 }
 
 body {
@@ -41,17 +47,27 @@ body {
     font-size: 3rem;
     cursor: pointer;
 }
-#timer{
+
+#restText{
     position: absolute;
     color: white;
     font-size: 3rem;
+    cursor: pointer;
+    display:none;
+}
+
+#timer{
+    position: absolute;
+    color: white;
+    font-size: 2.2rem;
+    top: 100px;
     cursor: pointer;
     display: none;
 }
 
 #setsCount{
     position: absolute;
-    top: 350px; /*150px is the baseline*/
+    top: 340px; /*140px is the baseline*/
     color: white;
     font-size: 2rem;
 }
