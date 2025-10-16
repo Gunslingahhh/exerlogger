@@ -40,8 +40,6 @@ for (let i = 0; i < totalSegments; i++) {
 //Collect all array with class "segment" and put it all in an array
 const segments = Array.from(document.querySelectorAll(".segment"));
 
-const state=["active", "inactive"];
-
 function countdown(time) {
     // Allow countdowns within 1 second to 7200 seconds (2 hours)
     if (time > 0 && time <= 7200) {
@@ -74,7 +72,6 @@ function countdown(time) {
     }
 }
 
-
 function stopwatch(){
     let second=0;
     const interval = setInterval(() =>{
@@ -83,10 +80,46 @@ function stopwatch(){
     }, 1000);
 }
 
-function allSegment(className){
+//Core Function
+function rotationSegment(className, direction, time){
     resetSegment();
-    for (let l=0; l < segments.length; l++){
-        segments[l].classList.add(className);
+    const seconds = time * 1000; //Convert milisecond to second
+    const duration = seconds / (segments.length-1); //Duration of the rotation around the segments
+
+    if (direction=="clockwise"){ //If direction is clockwise
+        const startIndex=1; //Starting point of the rotation
+
+        //Clockwise
+        for (let j=0; j < segments.length; j++){ //Loop
+            const index = (startIndex + j) % segments.length; //Select each segment
+
+            setTimeout(() => {
+                segments[index].classList.add(className); //Light up each segment according to className
+                
+                if (j == segments.length-1){ //If its at the very last segment
+                    startButton.style.display = "block"; //Show Start button
+                    restText.style.display = "none"; //Hide Rest text
+                    timer.style.display = "none"; //Hide timer
+                }
+            }, j * duration);        } //Duration of the rotation
+    }
+    else if(direction=="anticlockwise"){ //If direction is anticlockwise
+        const startIndex=23; //Starting point of the rotation
+
+        // Anticlockwise
+        for (let k=0; k < segments.length; k++){ //Loop
+            const index = (startIndex - k + segments.length) % segments.length; //Select each segment
+
+            setTimeout(() => {
+                segments[index].classList.add(className); //Light up each segment according to className
+
+                if (k == segments.length-1){ //If its at the very last segment
+                    startButton.style.display = "block"; //Show Start button
+                    restText.style.display = "none"; //Hide Rest text
+                    timer.style.display = "none"; //Hide timer
+                }
+            }, k * duration); //Duration of the rotation
+        }
     }
 }
 
@@ -96,15 +129,18 @@ function resetSegment(){
     }
 }
 
+//Custom Function
 var setCount=0;
-function startRepsBased(numberOfSet, restTime, className, direction){
+function repsBased(numberOfSet, restTime){
     if (setCount == 0){
-        allSegment("active");
+        rotationSegment("active", "clockwise", 0.5);
         startButton.innerHTML = "Start!";
     }
     else{
-        resetSegment();
-        rotationSegment(className, direction, restTime);
+        rotationSegment("active", "clockwise", restTime);
+        startButton.style.display = "none";
+        restText.style.display = "block";
+        timer.style.display = "block";
         countdown(restTime);
         
         if (setCount <= numberOfSet*2){ // Overlimit just like in Solo Leveling
@@ -114,62 +150,48 @@ function startRepsBased(numberOfSet, restTime, className, direction){
     setCount++;
 }
 
-/* function startTimerBased(){
+/* function timerBased(){
 
 
 } */
 
-function rotationSegment(className, direction, time){
-    const seconds = time * 1000; 
-    const duration = seconds / (segments.length-1);
+let flowInterval;
 
-    startButton.style.display = "none";
-    restText.style.display = "block";
-    timer.style.display = "block";
+function flowEffect() {
+    let head1 = 0;
+    let head2 = Math.floor(segments.length / 2); // opposite side
+    const trailLength = 5; // shorter trails look more like “tails”
+    const speed = 85; // lower = faster
 
-    if (direction=="clockwise"){
-        const startIndex=1;
-        //Clockwise
-        for (let j=0; j < segments.length; j++){
-            const index = (startIndex + j) % segments.length; 
-            setTimeout(() => {
-                segments[index].classList.add(className);
-                
-                // remove all other classes in "state" that are not the desired class
-                state.forEach(c => {
-                    if (c !== className) {
-                        segments[index].classList.remove(c);
-                        if (j == segments.length-1){
-                            startButton.style.display = "block";
-                            restText.style.display = "none";
-                            timer.style.display = "none";
-                            setTimeout(()=>{allSegment(c);},80);               
-                        }
-                    }
-                });
-            }, j * duration);        }
-    }
-    else if(direction=="anticlockwise"){
-        const startIndex=23;
-        // Anticlockwise
-        for (let k=0; k < segments.length; k++){
-            const index = (startIndex - k + segments.length) % segments.length;
-            setTimeout(() => {
-                segments[index].classList.add(className);
+    clearInterval(flowInterval);
 
-                // remove all other classes in "state" that are not the desired class
-                state.forEach(c => {
-                    if (c !== className) {
-                        segments[index].classList.remove(c);
-                        if (k == segments.length-1){
-                            startButton.style.display = "block";
-                            restText.style.display = "none";
-                            timer.style.display = "none";
-                            setTimeout(()=>{allSegment(c);},80);               
-                        }
-                    }
-                });
-            }, k * duration);
-        }
-    }
+    flowInterval = setInterval(() => {
+        segments.forEach((seg, i) => {
+            // Calculate distance from each head
+            const diff1 = (i - head1 + segments.length) % segments.length;
+            const diff2 = (i - head2 + segments.length) % segments.length;
+
+            // Segment glows if it's part of either koi's trail
+            if (diff1 < trailLength || diff2 < trailLength) {
+                seg.classList.add("active");
+                seg.style.opacity = 1;
+            } else {
+                seg.classList.remove("active");
+                seg.style.opacity = 0.3;
+            }
+        });
+
+        // Move both heads
+        head1 = (head1 + 1) % segments.length;
+        head2 = (head2 + 1) % segments.length;
+    }, speed);
+}
+
+
+function stopFlowEffect() {
+    clearInterval(flowInterval);
+    segments.forEach(seg => {
+        seg.classList.remove("active");
+        seg.style.opacity = 1;
+    });
 }
