@@ -10,6 +10,49 @@ const startButton = document.getElementById("startButton");
 const restText = document.getElementById("restText");
 const setsCount = document.getElementById("setsCount");
 
+//KEEP THE SCREEN AWAKE
+// --- SCREEN WAKE LOCK API ---
+// Prevents the screen from turning off during the workout.
+
+let wakeLock = null;
+
+// Function to request a wake lock
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('Screen Wake Lock acquired.');
+
+      // Listen for the lock to be released by the browser (e.g., tab minimized)
+      wakeLock.addEventListener('release', () => {
+        console.log('Screen Wake Lock released by the system.');
+      });
+      
+    } catch (err) {
+      // The user may have denied the request or the feature is unavailable
+      console.error(`Wake Lock request failed: ${err.name}, ${err.message}`);
+    }
+  } else {
+    console.warn('Screen Wake Lock API not supported in this browser.');
+  }
+}
+
+// Function to release the wake lock
+function releaseWakeLock() {
+  if (wakeLock) {
+    // Check if wakeLock is defined before attempting to release
+    wakeLock.release()
+      .then(() => {
+        wakeLock = null;
+        console.log('Screen Wake Lock released manually.');
+      })
+      .catch(err => {
+          console.error(`Error releasing wake lock: ${err.message}`);
+      });
+  }
+}
+// ----------------------------
+
 // CREATE SEGMENT
 for (let i = 0; i < totalSegments; i++) {
     // Create a wrapper for each segment. This wrapper will handle the rotation.
@@ -65,6 +108,11 @@ function countdown(time) {
                 }
 
                 timer.innerHTML = formattedTime;
+                if (i == 0){
+                  startButton.style.display = "block";
+                  restText.style.display = "none";
+                  timer.style.display = "none";
+                }
             }, (time - i) * 1000);
         }
     } else {
@@ -72,83 +120,152 @@ function countdown(time) {
     }
 }
 
-function stopwatch(){
-    let second=0;
-    const interval = setInterval(() =>{
-        second++;
-        console.log(`${second}`);
+// Global variable to store the ID returned by setInterval()
+// This must be declared outside any function so both start/stop can access it.
+let startTime; 
+let stopwatchInterval; 
+
+function startStopwatch(){
+    clearInterval(stopwatchInterval); 
+    
+    // 1. Record the precise start time (in milliseconds)
+    startTime = Date.now(); 
+    
+    // 2. We can still use setInterval to log the time, 
+    // but the final duration is calculated using Date.now()
+    stopwatchInterval = setInterval(() =>{
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        console.log(`Time elapsed: ${elapsed} seconds`);
     }, 1000);
 }
 
-//Core Function
-function rotationSegment(className, direction, time){
-    resetSegment();
-    const seconds = time * 1000; //Convert milisecond to second
-    const duration = seconds / (segments.length-1); //Duration of the rotation around the segments
+function endStopwatch(){
+    if (stopwatchInterval) {
+        clearInterval(stopwatchInterval);
+        
+        // 1. Record the precise end time
+        const endTime = Date.now();
+        
+        // 2. Calculate the difference
+        const rawDurationMs = endTime - startTime;
+        
+        // 3. Round to the nearest whole second
+        const totalDurationSeconds = Math.round(rawDurationMs / 1000);
 
-    if (direction=="clockwise"){ //If direction is clockwise
-        const startIndex=1; //Starting point of the rotation
-
-        //Clockwise
-        for (let j=0; j < segments.length; j++){ //Loop
-            const index = (startIndex + j) % segments.length; //Select each segment
-
-            setTimeout(() => {
-                segments[index].classList.add(className); //Light up each segment according to className
-                
-                if (j == segments.length-1){ //If its at the very last segment
-                    startButton.style.display = "block"; //Show Start button
-                    restText.style.display = "none"; //Hide Rest text
-                    timer.style.display = "none"; //Hide timer
-                }
-            }, j * duration);        } //Duration of the rotation
-    }
-    else if(direction=="anticlockwise"){ //If direction is anticlockwise
-        const startIndex=23; //Starting point of the rotation
-
-        // Anticlockwise
-        for (let k=0; k < segments.length; k++){ //Loop
-            const index = (startIndex - k + segments.length) % segments.length; //Select each segment
-
-            setTimeout(() => {
-                segments[index].classList.add(className); //Light up each segment according to className
-
-                if (k == segments.length-1){ //If its at the very last segment
-                    startButton.style.display = "block"; //Show Start button
-                    restText.style.display = "none"; //Hide Rest text
-                    timer.style.display = "none"; //Hide timer
-                }
-            }, k * duration); //Duration of the rotation
-        }
+        console.log(`Stopwatch stopped. Total time logged to console: ${totalDurationSeconds} seconds.`);
+        
+        stopwatchInterval = null; 
+    } else {
+        console.log("Stopwatch was not running.");
     }
 }
 
-function resetSegment(){
-    for (let l=0; l < segments.length; l++){
-        segments[l].classList.remove("active", "inactive");
+//Core Function
+async function rotationSegment(direction, time, action) {
+  return new Promise((resolve) => { // ✅ Make it return a Promise
+    const seconds = time * 1000;
+    const duration = seconds / (segments.length - 1);
+
+    for (let j = 0; j < segments.length; j++) {
+      setTimeout(() => {
+        const startIndex = direction === "clockwise" ? 1 : segments.length;
+        const index =
+          direction === "clockwise"
+            ? (startIndex + j) % segments.length
+            : (startIndex - j + segments.length) % segments.length;
+
+        segments[index].classList[action]("active");
+
+        if (j === segments.length - 1) {
+          resolve(); // ✅ Tell JS this async task is done
+        }
+      }, j * duration);
     }
+  });
+}
+
+function delayTask(durationSeconds) {
+  // console.log(`[ASYNC] ⏳ Starting ${durationSeconds} second delay...`);
+  
+  // The Promise is the key to pausing the sequence.
+  return new Promise(resolve => {
+      setTimeout(() => {
+          // console.log(`[ASYNC] ✅ ${durationSeconds} seconds finished. Waking up the processor.`);
+          resolve(); // This resumes the queue!
+      }, durationSeconds * 1000);
+  });
+}
+
+async function processCommandQueue(queue) {
+  // console.log("\n--- PROCESSOR STARTED ---");
+
+  for (const command of queue) {
+      // 'await' waits for either the function to finish instantly (sync) 
+      // or for the Promise to resolve (async).
+      await command(); 
+  }
+
+  // console.log("--- ALL COMMANDS COMPLETE ---\n");
 }
 
 //Custom Function
-var setCount=0;
-function repsBased(numberOfSet, restTime){
-    if (setCount == 0){
-        rotationSegment("active", "clockwise", 0.5);
-        startButton.innerHTML = "Start!";
-    }
-    else{
-        rotationSegment("active", "clockwise", restTime);
-        startButton.style.display = "none";
-        restText.style.display = "block";
-        timer.style.display = "block";
-        countdown(restTime);
-        
-        if (setCount <= numberOfSet*2){ // Overlimit just like in Solo Leveling
-            setsCount.innerHTML = `Sets: [ ${setCount} / ${numberOfSet} ]`;
-        }
-    }
-    setCount++;
+async function repsBased(exerSets, restTime){
+  const repsQueue = [
+    () => startStopwatch(),
+    () => rest(restTime),
+    // () => workout("timer",3),
+    // () => exercise("Push Up", "timer", exerSets, 1, restTime),
+    () => endStopwatch(),
+  ]
+
+  // Execute the sequence
+  processCommandQueue(repsQueue);
 }
+
+function exercise(exerName, exerType, exerSets, exerTime, restTime){
+  console.log(exerName);
+  for (let i=0; i<exerSets; i++){
+    setTimeout(()=>{workout(exerType, exerTime);
+      rest(restTime);
+      workout(exerType, exerTime);
+      rest(restTime);
+    }, i * 1000);
+  }
+}
+
+async function workout(exerType, exerTime){
+  // return new Promise((resolve) => { // ✅ Make it return a Promise
+    if (exerType == "reps"){
+      flowEffect();
+    }
+    else if (exerType == "timer"){
+      rotationSegment("anticlockwise", 0, "add");
+      await rotationSegment("clockwise", exerTime, "remove");
+      countdown(exerTime);
+    }
+  // });
+}
+
+async function rest(restTime){
+    // UI Setup (Synchronous, instant actions)
+    startButton.style.display = "none";
+    restText.style.display = "block";
+    timer.style.display = "block";
+    await rotationSegment("anticlockwise", 0, "add");
+
+    // Concurrent Execution (Await both timer and visual segment completion)
+    // This awaits BOTH promises to resolve before continuing.
+    await Promise.all([
+        countdown(restTime),                                 // Actual timer (the duration gate)
+        rotationSegment("clockwise", restTime, "remove")     // Visual timer (the animation)
+    ]);
+
+    // Cleanup UI for the next work phase (Synchronous)
+    restText.style.display = "none";
+    timer.style.display = "none";
+    startButton.style.display = "block";
+}
+
 
 /* function timerBased(){
 
@@ -156,42 +273,44 @@ function repsBased(numberOfSet, restTime){
 } */
 
 let flowInterval;
-
 function flowEffect() {
+  return new Promise((resolve) => { // ✅ Also return a Promise
     let head1 = 0;
-    let head2 = Math.floor(segments.length / 2); // opposite side
-    const trailLength = 5; // shorter trails look more like “tails”
-    const speed = 85; // lower = faster
+    let head2 = Math.floor(segments.length / 2);
+    const trailLength = 5;
+    const speed = 85;
 
     clearInterval(flowInterval);
 
     flowInterval = setInterval(() => {
-        segments.forEach((seg, i) => {
-            // Calculate distance from each head
-            const diff1 = (i - head1 + segments.length) % segments.length;
-            const diff2 = (i - head2 + segments.length) % segments.length;
+      segments.forEach((seg, i) => {
+        const diff1 = (i - head1 + segments.length) % segments.length;
+        const diff2 = (i - head2 + segments.length) % segments.length;
 
-            // Segment glows if it's part of either koi's trail
-            if (diff1 < trailLength || diff2 < trailLength) {
-                seg.classList.add("active");
-                seg.style.opacity = 1;
-            } else {
-                seg.classList.remove("active");
-                seg.style.opacity = 0.3;
-            }
-        });
+        if (diff1 < trailLength || diff2 < trailLength) {
+          seg.classList.add("active");
+          // seg.style.opacity = 1;
+        } else {
+          seg.classList.remove("active");
+          // seg.style.opacity = 0;
+        }
+      });
 
-        // Move both heads
-        head1 = (head1 + 1) % segments.length;
-        head2 = (head2 + 1) % segments.length;
+      head1 = (head1 + 1) % segments.length;
+      head2 = (head2 + 1) % segments.length;
     }, speed);
+    // resolve();
+  });
 }
 
 
 function stopFlowEffect() {
+  return new Promise((resolve) => { // ✅ Also return a Promise
     clearInterval(flowInterval);
     segments.forEach(seg => {
         seg.classList.remove("active");
         seg.style.opacity = 1;
     });
+    resolve();
+  });
 }
