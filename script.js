@@ -184,18 +184,6 @@ async function rotationSegment(direction, time, action) {
   });
 }
 
-function delayTask(durationSeconds) {
-  // console.log(`[ASYNC] ⏳ Starting ${durationSeconds} second delay...`);
-  
-  // The Promise is the key to pausing the sequence.
-  return new Promise(resolve => {
-      setTimeout(() => {
-          // console.log(`[ASYNC] ✅ ${durationSeconds} seconds finished. Waking up the processor.`);
-          resolve(); // This resumes the queue!
-      }, durationSeconds * 1000);
-  });
-}
-
 async function processCommandQueue(queue) {
   // console.log("\n--- PROCESSOR STARTED ---");
 
@@ -208,101 +196,33 @@ async function processCommandQueue(queue) {
   // console.log("--- ALL COMMANDS COMPLETE ---\n");
 }
 
-//Custom Function
-async function repsBased(exerSets, restTime){
-  const repsQueue = [
-    () => startStopwatch(),
-    () => rest(restTime),
-    // () => workout("timer",3),
-    // () => exercise("Push Up", "timer", exerSets, 1, restTime),
-    () => endStopwatch(),
-  ]
-
-  // Execute the sequence
-  processCommandQueue(repsQueue);
-}
-
-function exercise(exerName, exerType, exerSets, exerTime, restTime){
-  console.log(exerName);
-  for (let i=0; i<exerSets; i++){
-    setTimeout(()=>{workout(exerType, exerTime);
-      rest(restTime);
-      workout(exerType, exerTime);
-      rest(restTime);
-    }, i * 1000);
-  }
-}
-
-async function workout(exerType, exerTime){
-  // return new Promise((resolve) => { // ✅ Make it return a Promise
-    if (exerType == "reps"){
-      flowEffect();
-    }
-    else if (exerType == "timer"){
-      rotationSegment("anticlockwise", 0, "add");
-      await rotationSegment("clockwise", exerTime, "remove");
-      countdown(exerTime);
-    }
-  // });
-}
-
-async function rest(restTime){
-    // UI Setup (Synchronous, instant actions)
-    startButton.style.display = "none";
-    restText.style.display = "block";
-    timer.style.display = "block";
-    await rotationSegment("anticlockwise", 0, "add");
-
-    // Concurrent Execution (Await both timer and visual segment completion)
-    // This awaits BOTH promises to resolve before continuing.
-    await Promise.all([
-        countdown(restTime),                                 // Actual timer (the duration gate)
-        rotationSegment("clockwise", restTime, "remove")     // Visual timer (the animation)
-    ]);
-
-    // Cleanup UI for the next work phase (Synchronous)
-    restText.style.display = "none";
-    timer.style.display = "none";
-    startButton.style.display = "block";
-}
-
-
-/* function timerBased(){
-
-
-} */
-
 let flowInterval;
-function flowEffect() {
-  return new Promise((resolve) => { // ✅ Also return a Promise
-    let head1 = 0;
-    let head2 = Math.floor(segments.length / 2);
-    const trailLength = 5;
-    const speed = 85;
+async function flowEffect() {
+  let head1 = 0;
+  let head2 = Math.floor(segments.length / 2);
+  const trailLength = 5;
+  const speed = 85;
 
-    clearInterval(flowInterval);
+  clearInterval(flowInterval);
 
-    flowInterval = setInterval(() => {
-      segments.forEach((seg, i) => {
-        const diff1 = (i - head1 + segments.length) % segments.length;
-        const diff2 = (i - head2 + segments.length) % segments.length;
+  flowInterval = setInterval(() => {
+    segments.forEach((seg, i) => {
+      const diff1 = (i - head1 + segments.length) % segments.length;
+      const diff2 = (i - head2 + segments.length) % segments.length;
 
-        if (diff1 < trailLength || diff2 < trailLength) {
-          seg.classList.add("active");
-          // seg.style.opacity = 1;
-        } else {
-          seg.classList.remove("active");
-          // seg.style.opacity = 0;
-        }
-      });
+      if (diff1 < trailLength || diff2 < trailLength) {
+        seg.classList.add("active");
+        // seg.style.opacity = 1;
+      } else {
+        seg.classList.remove("active");
+        // seg.style.opacity = 0;
+      }
+    });
 
-      head1 = (head1 + 1) % segments.length;
-      head2 = (head2 + 1) % segments.length;
-    }, speed);
-    // resolve();
-  });
+    head1 = (head1 + 1) % segments.length;
+    head2 = (head2 + 1) % segments.length;
+  }, speed);
 }
-
 
 function stopFlowEffect() {
   return new Promise((resolve) => { // ✅ Also return a Promise
