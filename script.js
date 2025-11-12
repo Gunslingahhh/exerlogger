@@ -235,14 +235,43 @@ function stopFlowEffect() {
   });
 }
 
-async function exercise(exerType, exerSets, exerTime, restTime){ 
+async function exercise(exerName, exerType, exerSets, exerTime, restTime){ 
   // The Queue Builder: Defines the entire sequence of sets and rest periods,
   // populating the global workoutQueue array with commands.
 }
 
-async function workout(exerTime){ 
+async function workout(exerType, exerSets, exerTime, restTime){ 
   // The Basic Unit of Work: Executes all asynchronous tasks for one work period 
   // (e.g., visual timer + countdown) and resolves only upon completion.
+
+  if (exerType == "reps"){
+    console.log("reps");
+  } else if (exerType == "timer"){
+    for (let i=0; i<exerSets; i++){
+      // 1. Setup UI for Rest (Synchronous, instant)
+      rotationSegment("clockwise", 0, "remove")     // Visual timer (The animation)
+      startButton.style.display="none"; // Hide 'Finish Set' button
+      restText.style.display="block";   // Show 'Resting' text
+      restText.innerHTML="Finish Set!";   // Show 'Finish Set!' text
+      timer.style.display="block";      // Show the countdown numbers
+
+      // 2. Run the Visual and Numerical Timers Concurrently
+      // We use Promise.all to ensure the function PAUSES until BOTH promises resolve
+      // after the full restTime duration.
+      await Promise.all([
+          countdown(exerTime),                                 // Actual timer (The duration gate)
+          rotationSegment("anticlockwise", exerTime, "add"),     // Visual timer (The animation)
+          
+      ]);
+      
+      // 3. Cleanup UI after Rest is complete (Synchronous, instant)
+      startButton.style.display="block";
+      restText.style.display="none";
+      timer.style.display="none";
+      setsCount.innerHTML = `Sets: [ ${i+1} / ${exerSets} ]`,
+      await rest(restTime);
+    }
+  }
 }
 
 async function rest(restTime){ 
@@ -253,6 +282,7 @@ async function rest(restTime){
   rotationSegment("clockwise", 0, "add")     // Visual timer (The animation)
   startButton.style.display="none"; // Hide 'Finish Set' button
   restText.style.display="block";   // Show 'Resting' text
+  restText.innerHTML="Resting";     // Show "Resting" text
   timer.style.display="block";      // Show the countdown numbers
 
   // 2. Run the Visual and Numerical Timers Concurrently
