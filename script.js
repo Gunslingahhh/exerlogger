@@ -7,6 +7,7 @@ const center = document.getElementById("center-point");
 const exerciseName = document.getElementById("exerciseName");
 const timer = document.getElementById("timer");
 const startButton = document.getElementById("startButton");
+const restButton = document.getElementById("restButton");
 const restText = document.getElementById("restText");
 const setsCount = document.getElementById("setsCount");
 
@@ -198,30 +199,30 @@ async function processCommandQueue(queue) {
 
 let flowInterval;
 async function flowEffect() {
-  let head1 = 0;
-  let head2 = Math.floor(segments.length / 2);
-  const trailLength = 5;
-  const speed = 85;
+    let head1 = 0;
+    let head2 = Math.floor(segments.length / 2);
+    const trailLength = 5;
+    const speed = 85;
 
-  clearInterval(flowInterval);
+    clearInterval(flowInterval);
 
-  flowInterval = setInterval(() => {
-    segments.forEach((seg, i) => {
-      const diff1 = (i - head1 + segments.length) % segments.length;
-      const diff2 = (i - head2 + segments.length) % segments.length;
+    flowInterval = setInterval(() => {
+      segments.forEach((seg, i) => {
+        const diff1 = (i - head1 + segments.length) % segments.length;
+        const diff2 = (i - head2 + segments.length) % segments.length;
 
-      if (diff1 < trailLength || diff2 < trailLength) {
-        seg.classList.add("active");
-        // seg.style.opacity = 1;
-      } else {
-        seg.classList.remove("active");
-        // seg.style.opacity = 0;
-      }
-    });
+        if (diff1 < trailLength || diff2 < trailLength) {
+          seg.classList.add("active");
+          // seg.style.opacity = 1;
+        } else {
+          seg.classList.remove("active");
+          // seg.style.opacity = 0;
+        }
+      });
 
-    head1 = (head1 + 1) % segments.length;
-    head2 = (head2 + 1) % segments.length;
-  }, speed);
+      head1 = (head1 + 1) % segments.length;
+      head2 = (head2 + 1) % segments.length;
+    }, speed);
 }
 
 function stopFlowEffect() {
@@ -235,17 +236,42 @@ function stopFlowEffect() {
   });
 }
 
-async function exercise(exerName, exerType, exerSets, exerTime, restTime){ 
+async function exercise(){ 
   // The Queue Builder: Defines the entire sequence of sets and rest periods,
   // populating the global workoutQueue array with commands.
 }
 
-async function workout(exerType, exerSets, exerTime, restTime){ 
-  // The Basic Unit of Work: Executes all asynchronous tasks for one work period 
-  // (e.g., visual timer + countdown) and resolves only upon completion.
+async function preReps(){
+  await rotationSegment("anticlockwise", 0, "remove");
+  await flowEffect();
+}
 
+async function postReps(restTime){
+  await rotationSegment("anticlockwise", 0, "add");
+  timer.style.display="block";
+  startButton.style.display = "none";
+  restText.style.display = "block";
+  countdown(restTime);
+  await rotationSegment("clockwise", restTime, "remove");
+  await preReps();
+}
+
+var setCount=0;
+async function workout(exerName, exerType, exerSets, exerTime, restTime){
+  exerciseName.innerHTML = `${exerName} x ${exerSets}`
   if (exerType == "reps"){
-    console.log("reps");
+    if (setCount == 0){
+      preReps();
+    }
+    else{
+      stopFlowEffect();
+      postReps(restTime);
+
+      if (setCount <= exerSets*2){
+        setsCount.innerHTML = `Sets: [${setCount} / ${exerSets}]`;
+      }
+    }
+    setCount++;
   } else if (exerType == "timer"){
     for (let i=0; i<exerSets; i++){
       // 1. Setup UI for Rest (Synchronous, instant)
